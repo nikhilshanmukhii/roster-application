@@ -1,0 +1,6 @@
+{
+  "appId": "com.nikhil.roster",
+  "appName": "24/7 Roster",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

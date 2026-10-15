@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#fecb00">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>24/7 Master Schedule & Roster</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%2224%2F7%20Master%20Roster%22%2C%22short_name%22%3A%22Roster%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111215%22%2C%22theme_color%22%3A%22%23fecb00%22%7D">
+
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      background: #111215;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .roster-card {
+      width: 100%;
+      max-width: 440px;
+      background: #fecb00;
+      border-radius: 34px;
+      padding: 24px 18px 26px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+      border: 3px solid #111;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #0b0b0d;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .badge-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .session-badge {
+      background: #0b0b0d;
+      color: #fecb00;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .hours-badge {
+      font-size: 10px;
+      font-weight: 900;
+      color: #0b0b0d;
+      text-transform: uppercase;
+    }
+
+    .meta-subtitle {
+      font-size: 11px;
+      font-weight: 800;
+      color: #3b3303;
+      margin-bottom: 12px;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 2px solid #0b0b0d;
+      background: #0b0b0d;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .btn-action.secondary {
+      background: #fff;
+      color: #0b0b0d;
+    }
+
+    .btn-action.active-alert {
+      background: #059669;
+      color: #fff;
+      border-color: #059669;
+    }
+
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+
+    .day-selector {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+
+    .day-btn {
+      background: #fff;
+      border: 2px solid #0b0b0d;
+      border-radius: 10px;
+      padding: 8px 0;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #0b0b0d;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .day-btn.active {
+      background: #0b0b0d;
+      color: #fecb00;
+    }
+
+    .slot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 58vh;
+      overflow-y: auto;
+      padding-right: 3px;
+    }
+
+    .slot-item {
+      background: #ffffff;
+      border: 2.5px solid #0b0b0d;
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .slot-item.is-ongoing {
+      border: 2.5px solid #059669;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+      background: #f0fdf4;
+    }
+
+    .slot-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .course-title-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+
+    .course-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #0b0b0d;
+      line-height: 1.25;
+    }
+
+    .live-tag {
+      background: #059669;
+      color: #fff;
+      font-size: 8.5px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 999px;
+      letter-spacing: 0.4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      background: #fff;
+      border-radius: 50%;
+      animation: blink 1.2s infinite ease-in-out;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .tag-pill {
+      display: inline-block;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 5px;
+      margin-right: 4px;
+      letter-spacing: 0.4px;
+    }
+
+    .tag-sadhana { border: 1.5px solid #d97706; color: #b45309; }
+    .tag-lab { border: 1.5px solid #7c6cf0; color: #5544e3; }
+    .tag-study { border: 1.5px solid #2563eb; color: #1d4ed8; }
+    .tag-sleep { border: 1.5px solid #64748b; color: #475569; }
+    .tag-routine { border: 1.5px solid #059669; color: #047857; }
+
+    .instructor-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .time-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+    }
+
+    .time-badge {
+      background: #0b0b0d;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 5px 8px;
+      border-radius: 999px;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .slot-item.is-ongoing .time-badge {
+      background: #059669;
+    }
+
+    .duration-label {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #0b0b0d;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    .free-day {
+      background: #fff;
+      border: 2px dashed #0b0b0d;
+      border-radius: 16px;
+      padding: 30px 16px;
+      text-align: center;
+      color: #222;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 24px;
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 3px solid #000;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 900;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #333;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 2px solid #111;
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .edit-slot-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      width: 100%;
+      background: #059669;
+      color: #fff;
+      padding: 10px;
+      border: 2px solid #000;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="roster-card">
+    <div class="header-row">
+      <div class="title">24/7 Schedule</div>
+      <div class="badge-stack">
+        <div class="session-badge" id="session-count">0 SLOTS</div>
+        <div class="hours-badge" id="hours-count">0 HR</div>
+      </div>
+    </div>
+    <div class="meta-subtitle">BATCH L1 • SEC L • 24*7 ROUTINE</div>
+
+    <div class="action-row">
+      <button class="btn-action" onclick="openEditor()">✏️ Edit</button>
+      <button class="btn-action secondary" id="btn-alert-toggle" onclick="toggleNotifications()">🔔 Alerts: OFF</button>
+      <button class="btn-action secondary" style="flex: 0.6;" onclick="resetDefaultTimetable()">🔄 Reset</button>
+    </div>
+
+    <div class="day-selector">
+      <button class="day-btn" onclick="renderSchedule('MON', true)">MON</button>
+      <button class="day-btn" onclick="renderSchedule('TUE', true)">TUE</button>
+      <button class="day-btn" onclick="renderSchedule('WED', true)">WED</button>
+      <button class="day-btn" onclick="renderSchedule('THU', true)">THU</button>
+      <button class="day-btn" onclick="renderSchedule('FRI', true)">FRI</button>
+      <button class="day-btn" onclick="renderSchedule('SAT', true)">SAT</button>
+      <button class="day-btn" onclick="renderSchedule('SUN', true)">SUN</button>
+    </div>
+
+    <div class="slot-list" id="slot-list"></div>
+  </div>
+
+  <!-- Edit Schedule Modal -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal-content">
+      <div class="modal-title">
+        <span>Edit <span id="modal-active-day">MON</span> Schedule</span>
+        <span class="modal-close" onclick="closeEditor()">&times;</span>
+      </div>
+
+      <div style="margin-bottom: 12px; max-height: 150px; overflow-y: auto;" id="existing-slots-editor"></div>
+
+      <hr style="margin: 12px 0; border: none; border-top: 1px dashed #cbd5e1;">
+
+      <div style="font-size: 11.5px; font-weight: 900; margin-bottom: 8px;">+ ADD NEW SLOT</div>
+
+      <div class="form-group">
+        <label>Activity / Subject</label>
+        <input type="text" id="slot-name" placeholder="e.g. DSA Practice">
+      </div>
+
+      <div class="form-group">
+        <label>Instructor / Details</label>
+        <input type="text" id="slot-note" placeholder="e.g. Self Study / Room CV301">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="time" id="slot-start" value="19:45">
+        </div>
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="time" id="slot-end" value="21:50">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <select id="slot-type">
+          <option value="study">Study / Coding</option>
+          <option value="sadhana">Sadhana</option>
+          <option value="class">College Lecture</option>
+          <option value="lab">Lab Session</option>
+          <option value="routine">Routine / Meals</option>
+          <option value="sleep">Sleep</option>
+        </select>
+      </div>
+
+      <button class="btn-save" onclick="addSlotFromModal()">+ Add This Slot</button>
+    </div>
+  </div>
+
+  <script>
+    // Audio Chime using Web Audio API
+    function playAlertChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    const MORNING_BASE = [
+      { name: "Wake & Freshen Up", prof: "Routine", time: "03:15 AM", dur: "25 MIN", hours: 0.4, start: 3*60+15, end: 3*60+40, type: "routine" },
+      { name: "Morning Sadhana (Part 1)", prof: "Sadhana Session 1", time: "03:40 AM", dur: "2.1 HRS", hours: 2.1, start: 3*60+40, end: 5*60+45, type: "sadhana" },
+      { name: "Hydration & Transition", prof: "Routine", time: "05:45 AM", dur: "15 MIN", hours: 0.25, start: 5*60+45, end: 6*60, type: "routine" },
+      { name: "Morning Sadhana (Part 2)", prof: "Sadhana Session 2", time: "06:00 AM", dur: "1.25 HRS", hours: 1.25, start: 6*60, end: 7*60+15, type: "sadhana" },
+      { name: "Breakfast & Prep", prof: "Morning Routine", time: "07:15 AM", dur: "30 MIN", hours: 0.5, start: 7*60+15, end: 7*60+45, type: "routine" },
+      { name: "Commute to BIET", prof: "Commute", time: "07:45 AM", dur: "15 MIN", hours: 0.25, start: 7*60+45, end: 8*60, type: "routine" }
+    ];
+
+    const EVENING_BASE = [
+      { name: "Evening Sadhana", prof: "Daily Practice", time: "05:00 PM", dur: "1.5 HRS", hours: 1.5, start: 17*60, end: 18*60+30, type: "sadhana" },
+      { name: "Study Session 2", prof: "Coursework / Quick Review", time: "06:30 PM", dur: "30 MIN", hours: 0.5, start: 18*60+30, end: 19*60, type: "study" },
+      { name: "Dinner", prof: "Strict Routine", time: "07:00 PM", dur: "45 MIN", hours: 0.75, start: 19*60, end: 19*60+45, type: "routine" },
+      { name: "Core Night Study", prof: "Deep Focus (DSA / Math / Coding)", time: "07:45 PM", dur: "2.1 HRS", hours: 2.1, start: 19*60+45, end: 21*60+50, type: "study" },
+      { name: "Wind Down & Plan", prof: "Screen Off & Night Prep", time: "09:50 PM", dur: "10 MIN", hours: 0.15, start: 21*60+50, end: 22*60, type: "routine" },
+      { name: "Night Sleep", prof: "Rest (5h 15m)", time: "10:00 PM", dur: "5.25 HRS", hours: 5.25, start: 22*60, end: 24*60, type: "sleep" }
+    ];
+
+    const DEFAULT_TIMETABLE = {
+      MON: [
+        ...MORNING_BASE,
+        { name: "Applied Mathematics – I", prof: "Prof. Chaitra A P", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "class" },
+        { name: "Intro to AI & Applications", prof: "Prof. Nagashree J A", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "Intro to Electronics & Comm.", prof: "Dr. Kiran Kumar G H", time: "10:30 AM", dur: "1 HR", hours: 1, start: 10*60+30, end: 11*60+30, type: "class" },
+        { name: "Programming in C", prof: "Prof. Sahana N A", time: "11:30 AM", dur: "1 HR", hours: 1, start: 11*60+30, end: 12*60+30, type: "class" },
+        { name: "Lunch Break", prof: "Midday Break", time: "12:30 PM", dur: "1.5 HRS", hours: 1.5, start: 12*60+30, end: 14*60, type: "routine" },
+        { name: "Applied Chemistry Lab", prof: "Prof. Bhumika P S", time: "02:00 PM", dur: "2 HRS", hours: 2, start: 14*60, end: 16*60, type: "lab" },
+        { name: "Study Session 1", prof: "Return & Coursework", time: "04:00 PM", dur: "1 HR", hours: 1, start: 16*60, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      TUE: [
+        ...MORNING_BASE,
+        { name: "Intro to Electronics & Comm.", prof: "Dr. Kiran Kumar G H", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "class" },
+        { name: "Applied Chemistry for CS", prof: "Prof. Bhumika P S", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "C Programming Lab", prof: "Prof. Sahana N A", time: "10:30 AM", dur: "2 HRS", hours: 2, start: 10*60+30, end: 12*60+30, type: "lab" },
+        { name: "Lunch Break", prof: "Midday Break", time: "12:30 PM", dur: "1.5 HRS", hours: 1.5, start: 12*60+30, end: 14*60, type: "routine" },
+        { name: "Applied Mathematics – I", prof: "Prof. Chaitra A P", time: "02:00 PM", dur: "1 HR", hours: 1, start: 14*60, end: 15*60, type: "class" },
+        { name: "Study Session 1", prof: "Return, Refresh & Study", time: "03:15 PM", dur: "1.75 HRS", hours: 1.75, start: 15*60+15, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      WED: [
+        ...MORNING_BASE,
+        { name: "Intro to AI & Applications", prof: "Prof. Nagashree J A", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "class" },
+        { name: "Programming in C", prof: "Prof. Sahana N A", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "Intro to Electronics & Comm.", prof: "Dr. Kiran Kumar G H", time: "10:30 AM", dur: "1 HR", hours: 1, start: 10*60+30, end: 11*60+30, type: "class" },
+        { name: "Applied Mathematics – I", prof: "Prof. Chaitra A P", time: "11:30 AM", dur: "1 HR", hours: 1, start: 11*60+30, end: 12*60+30, type: "class" },
+        { name: "Lunch Break", prof: "Midday Break", time: "12:30 PM", dur: "1.5 HRS", hours: 1.5, start: 12*60+30, end: 14*60, type: "routine" },
+        { name: "Communication & Soft Skills", prof: "Prof. Annapurneshwari P", time: "02:00 PM", dur: "2 HRS", hours: 2, start: 14*60, end: 16*60, type: "class" },
+        { name: "Study Session 1", prof: "Return & Coursework", time: "04:00 PM", dur: "1 HR", hours: 1, start: 16*60, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      THU: [
+        ...MORNING_BASE,
+        { name: "Self Study & Math Review", prof: "Self Preparation", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "study" },
+        { name: "Applied Chemistry for CS", prof: "Prof. Bhumika P S", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "Intro to AI & Applications", prof: "Prof. Nagashree J A", time: "10:30 AM", dur: "1 HR", hours: 1, start: 10*60+30, end: 11*60+30, type: "class" },
+        { name: "Intro to Electronics & Comm.", prof: "Dr. Kiran Kumar G H", time: "11:30 AM", dur: "1 HR", hours: 1, start: 11*60+30, end: 12*60+30, type: "class" },
+        { name: "Lunch Break", prof: "Midday Break", time: "12:30 PM", dur: "1.5 HRS", hours: 1.5, start: 12*60+30, end: 14*60, type: "routine" },
+        { name: "Study Session 1 (Afternoon)", prof: "Coding / Lab Preparation", time: "02:00 PM", dur: "3 HRS", hours: 3, start: 14*60, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      FRI: [
+        ...MORNING_BASE,
+        { name: "Programming in C", prof: "Prof. Sahana N A", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "class" },
+        { name: "Applied Mathematics – I", prof: "Prof. Chaitra A P", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "Applied Chemistry for CS", prof: "Prof. Bhumika P S", time: "10:30 AM", dur: "1 HR", hours: 1, start: 10*60+30, end: 11*60+30, type: "class" },
+        { name: "Intro to AI & Applications", prof: "Prof. Nagashree J A", time: "11:30 AM", dur: "1 HR", hours: 1, start: 11*60+30, end: 12*60+30, type: "class" },
+        { name: "Lunch Break", prof: "Midday Break", time: "12:30 PM", dur: "1.5 HRS", hours: 1.5, start: 12*60+30, end: 14*60, type: "routine" },
+        { name: "Study Session 1 (Afternoon)", prof: "C Programming & DSA", time: "02:00 PM", dur: "3 HRS", hours: 3, start: 14*60, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      SAT: [
+        ...MORNING_BASE,
+        { name: "Applied Chemistry for CS", prof: "Prof. Bhumika P S", time: "08:00 AM", dur: "1 HR", hours: 1, start: 8*60, end: 9*60, type: "class" },
+        { name: "Programming in C", prof: "Prof. Sahana N A", time: "09:00 AM", dur: "1 HR", hours: 1, start: 9*60, end: 10*60, type: "class" },
+        { name: "Applied Mathematics – I", prof: "Prof. Chaitra A P", time: "10:30 AM", dur: "1 HR", hours: 1, start: 10*60+30, end: 11*60+30, type: "class" },
+        { name: "Lunch & Rest", prof: "Midday Break", time: "12:00 PM", dur: "2 HRS", hours: 2, start: 12*60, end: 14*60, type: "routine" },
+        { name: "Project Development & DSA", prof: "Building Apps & Coding", time: "02:00 PM", dur: "3 HRS", hours: 3, start: 14*60, end: 17*60, type: "study" },
+        ...EVENING_BASE
+      ],
+      SUN: [
+        { name: "Wake & Freshen Up", prof: "Routine", time: "03:15 AM", dur: "25 MIN", hours: 0.4, start: 3*60+15, end: 3*60+40, type: "routine" },
+        { name: "Morning Sadhana (Part 1)", prof: "Sadhana Session 1", time: "03:40 AM", dur: "2.1 HRS", hours: 2.1, start: 3*60+40, end: 5*60+45, type: "sadhana" },
+        { name: "Hydration & Rest", prof: "Routine", time: "05:45 AM", dur: "15 MIN", hours: 0.25, start: 5*60+45, end: 6*60, type: "routine" },
+        { name: "Morning Sadhana (Part 2)", prof: "Sadhana Session 2", time: "06:00 AM", dur: "1.25 HRS", hours: 1.25, start: 6*60, end: 7*60+15, type: "sadhana" },
+        { name:

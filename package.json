@@ -1,0 +1,13 @@
+{
+  "name": "roster-application",
+  "version": "1.0.0",
+  "description": "24/7 Master Schedule App",
+  "scripts": {
+    "build": "echo 'No build step'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}

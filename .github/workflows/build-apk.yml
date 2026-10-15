@@ -2,18 +2,19 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -21,26 +22,25 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Add Capacitor Android
+      - name: Add Capacitor Platform
         run: |
           npx cap add android
           npx cap sync
 
-      - name: Setup Java JDK 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: 17
 
-      - name: Compile Debug APK
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
-        uses: actions/upload-artifact
-        @v4
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: Roster-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
